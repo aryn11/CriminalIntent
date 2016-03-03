@@ -13,6 +13,10 @@ import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.DatePicker;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+
 /**
  * Created by aryn on 29.02.16.
  */
@@ -51,7 +55,12 @@ public class CrimeFragment extends Fragment {
         });
 
         mDateButton = (Button)v.findViewById(R.id.crime_date);
-        mDateButton.setText(mCrime.getDate().toString());
+
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("EEE, MMM dd, yyyy", Locale.ENGLISH);
+        String data = simpleDateFormat.format(mCrime.getDate());
+         // 02 September 12 03:54:46
+
+        mDateButton.setText(data);
         mDateButton.setEnabled(false);
 
         mSolvedCheckBox = (CheckBox)v.findViewById(R.id.crime_solved);

@@ -1,6 +1,8 @@
 package com.example.aryn.criminalintent;
 
+import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
 import java.util.UUID;
 
 /**
@@ -32,6 +34,7 @@ public class Crime {
     }
 
     public Date getDate() {
+
         return mDate;
     }
 
