@@ -38,6 +38,11 @@ public class Crime {
         return mDate;
     }
 
+    @Override
+    public String toString() {
+        return mTitle;
+    }
+
     public void setDate(Date date) {
         this.mDate = date;
     }
