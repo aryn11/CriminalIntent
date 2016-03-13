@@ -1,6 +1,6 @@
 package com.example.aryn.criminalintent;
 
-import android.graphics.Camera;
+import android.content.Context;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -13,8 +13,10 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Created by user on 12.03.2016.
@@ -24,10 +26,49 @@ public class CrimeCameraFragment extends Fragment {
 
     private android.hardware.Camera mCamera;
     private SurfaceView mSurfaceView;
+    private View mProgressContainer;
 
-    /** Простой алгоритм для получения наибольшего доступного размера.
+    private android.hardware.Camera.ShutterCallback mShutterCallback = new android.hardware.Camera.ShutterCallback() {
+        @Override
+        public void onShutter() {
+            //progressBar
+            mProgressContainer.setVisibility(View.VISIBLE);
+        }
+    };
+
+    private android.hardware.Camera.PictureCallback mJpegCallback = new android.hardware.Camera.PictureCallback() {
+        @Override
+        public void onPictureTaken(byte[] data, android.hardware.Camera camera) {
+            String filename = UUID.randomUUID().toString() + ".jpg";
+
+            FileOutputStream os = null;
+            boolean success = true;
+            try {
+                os = getActivity().openFileOutput(filename, Context.MODE_PRIVATE);
+                os.write(data);
+            } catch (Exception e) {
+                Log.e(TAG, "Error writing to file " + filename, e);
+                success = false;
+            } finally {
+                try {
+                    if (os != null)
+                        os.close();
+                } catch (Exception e) {
+                    Log.e(TAG, "Error closing file " + filename, e);
+                }
+            }
+            if (success) {
+                Log.i(TAG, "JPEG saved at " + filename);
+            }
+            getActivity().finish();
+        }
+    };
+
+    /**
+     * Простой алгоритм для получения наибольшего доступного размера.
      * Более мощная версия представлена в файле CameraPreview.java
-     * приложения-примера ApiDemos от Android. */
+     * приложения-примера ApiDemos от Android.
+     */
     private android.hardware.Camera.Size getBestSupportedSize(List<android.hardware.Camera.Size> sizes, int width, int height) {
         android.hardware.Camera.Size bestSize = sizes.get(0);
         int largestArea = bestSize.width * bestSize.height;
@@ -45,14 +86,20 @@ public class CrimeCameraFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View v = inflater.inflate(R.layout.fragment_crime_camera, container, false);
-        Button takePictureCutton = (Button)v.findViewById(R.id.crime_camera_takePictureButton);
+
+        mProgressContainer = v.findViewById(R.id.crime_camera_progressContainer);
+        mProgressContainer.setVisibility(View.INVISIBLE);
+
+        Button takePictureCutton = (Button) v.findViewById(R.id.crime_camera_takePictureButton);
         takePictureCutton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                getActivity().finish();
+                if(mCamera != null){
+                    mCamera.takePicture(mShutterCallback, null, mJpegCallback);
+                }
             }
         });
-        mSurfaceView = (SurfaceView)v.findViewById(R.id.crime_camera_surfaceView);
+        mSurfaceView = (SurfaceView) v.findViewById(R.id.crime_camera_surfaceView);
         SurfaceHolder holder = mSurfaceView.getHolder();
         holder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
 
@@ -61,11 +108,11 @@ public class CrimeCameraFragment extends Fragment {
             public void surfaceCreated(SurfaceHolder holder) {
                 // Приказываем камере использовать указанную
                 // поверхность как область предварительного просмотра
-                try{
-                    if(mCamera != null){
+                try {
+                    if (mCamera != null) {
                         mCamera.setPreviewDisplay(holder);
                     }
-                } catch (IOException ex){
+                } catch (IOException ex) {
                     Log.e(TAG, "Error setting up preview display", ex);
                 }
 
@@ -81,11 +128,13 @@ public class CrimeCameraFragment extends Fragment {
                 android.hardware.Camera.Parameters parameters = mCamera.getParameters();
                 android.hardware.Camera.Size s = getBestSupportedSize(parameters.getSupportedPreviewSizes(), width, height);
                 parameters.setPreviewSize(s.width, s.height);
+                s = getBestSupportedSize(parameters.getSupportedPictureSizes(), width, height);
+                parameters.setPictureSize(s.width, s.height);
                 mCamera.setParameters(parameters);
 
                 try {
                     mCamera.startPreview();
-                } catch (Exception e){
+                } catch (Exception e) {
                     Log.e(TAG, "Could not start preview", e);
                     mCamera.release();
                     mCamera = null;
@@ -103,7 +152,7 @@ public class CrimeCameraFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD){
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD) {
             mCamera = android.hardware.Camera.open(0);
         } else {
             mCamera = android.hardware.Camera.open();
@@ -113,7 +162,7 @@ public class CrimeCameraFragment extends Fragment {
     @Override
     public void onPause() {
         super.onPause();
-        if(mCamera != null){
+        if (mCamera != null) {
             mCamera.release();
             mCamera = null;
         }
