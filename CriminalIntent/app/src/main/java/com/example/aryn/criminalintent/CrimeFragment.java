@@ -2,6 +2,7 @@ package com.example.aryn.criminalintent;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -15,6 +16,7 @@ import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.DatePicker;
+import android.widget.ImageButton;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -30,6 +32,8 @@ public class CrimeFragment extends Fragment {
 
     private static final String DIALOG_DATE = "date";
     private static final int REQUEST_DATE = 0;
+
+    private ImageButton mPhotoButton;
 
     Crime mCrime;
     EditText mTitleField;
@@ -108,7 +112,18 @@ public class CrimeFragment extends Fragment {
             }
         });
 
-
+        mPhotoButton = (ImageButton)v.findViewById(R.id.crime_imageButton);
+        mPhotoButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent i = new Intent(getActivity(), CrimeCameraActivity.class);
+                startActivity(i);
+            }
+        });
+        PackageManager pm = getActivity().getPackageManager();
+        if(!pm.hasSystemFeature(PackageManager.FEATURE_CAMERA) && !pm.hasSystemFeature(PackageManager.FEATURE_CAMERA_FRONT)){
+            mPhotoButton.setEnabled(false);
+        }
 
         return v;
     }
